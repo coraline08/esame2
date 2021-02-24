@@ -1,6 +1,3 @@
-"""
--*-*-*-*-*-*-*-*-*-*-*-
-"""
 #classe per le eccezioni
 class ExamException(Exception):
     pass
@@ -66,9 +63,7 @@ class CSVTimeSeriesFile:
                 raise Exception("Timestamp già presente")
         #faccio ritornare la lista di valori [timesstamp,temperature ] (senza intestazione)
         return time_series
-"""
--*-*-*-*-*-*-*-*-*-*-*-
-"""
+
 def hourly_trend_changes(time_series):
 
     n_trend=[]
@@ -79,13 +74,10 @@ def hourly_trend_changes(time_series):
         if i==len(time_series)-1:
             ore.append([int(time_series[i][0]/3600),time_series[i][1]])
             ore.append([-1,-1])
-
-        #dividendo l'epoch per 3600 e trasformando il risultato in un intero calcolo quante ore sono passate dal primo gennaio del 1970 in altre parole adesso riesco a distinguere un'ora dall'altra perche tutte le temperature della stessa ora avranno lo stesso epoch in ore
+        #converto gli epochs, nel senso che vedo se appartengono alla stessa ora
         ore.append([int(time_series[i][0]/3600),time_series[i][1]])
-
-    #inzializzo questa variabile fuori dal ciclo cosi posso salvarmi il trend della lista temperature prima di azzerarla 
+    #inizializzo una variabile vuota per mettere i trend precedenti
     prec = None
-
     #ciclo su tutta "ore"
     for i in range(len(ore)):
 
@@ -94,13 +86,13 @@ def hourly_trend_changes(time_series):
             #agiungo la temperatura 
             temperature.append(ore[i][1])
         
-        #quando non sono al primo elemento della lista
+        #dal secondo elemento in poi della lista
         if i > 0 :
             if ore[i][0]==ore[i-1][0]:
                 #appendo la temperatura che corrisponde all'epoch in posizione i alla lista temperature
                 temperature.append(ore[i][1])
             
-            #se l'epoch è diverso dal suo precedente e l'epoch è diverso da -1(cioe l'ultimo elemento di 'ore'', quello creato per interrompere corettamente il ciclo)
+            #se l'epoch è diverso dal suo precedente e dall'ultimo elemento di 'ore'
             if ore[i][0] != ore[i-1][0] and ore[i][0]!=-1:
                 #setto il contatore_trend a zero
                 contatore_trend=0
@@ -114,41 +106,40 @@ def hourly_trend_changes(time_series):
 
                     #quando sono al secondo elemento
                     if x==1:
-
                         if temperature[x]==temperature[x-1]:
                             continue
                         elif temperature[x]>temperature[x-1]:
-                            variazione=True
+                            variazione=True #variazione positiva
                         else:
-                             variazione=False
-
-                        if prec != variazione and prec!=None:
+                             variazione=False #variazione negativa
+                        #se prec non è vuoto e non ha variazione
+                        if prec != None and prec != variazione:
                             contatore_trend +=1
+                            #ora la variazione si sostituisce a prec
                             prec=variazione
 
                     #dal terzo elemento in poi
                     if x>1:
                         if temperature[x]==temperature[x-1]:
-                            adesso=variazione
+                            adesso=variazione #variazione(prec)=variazione di adesso
                         elif temperature[x]>temperature[x-1]:
-                            adesso=True
+                            adesso=True #variazione di adesso positiva
                         else:
-                            adesso=False
+                            adesso=False #altrimenti negativa
+                        #se variazione prec è diverso da variazione di adesso    
                         if variazione!=adesso:
-                            variazione=adesso
+                            variazione=adesso #li metto uguali e aumento di una inversione
                             contatore_trend += 1
+                        #la variazione si sostituisce a prec
                         prec=variazione
-
+                #appendo le inversioni
                 n_trend.append(contatore_trend)
                 temperature.clear()
-                temperature.append(ore[i-1][1])
-                temperature.append(ore[i][1])
-                        
+                temperature.append(ore[i-1][1]) #addo le temperature dell'ora precedente
+                temperature.append(ore[i][1]) #e la prima della  successiva
+    #faccio ritornare la lista col numero di inversioni                    
     return n_trend
 
-"""
--*-*-*-*-*-*-*-*-*-*-*-
-"""
 time_series_file = CSVTimeSeriesFile(name='data1.csv')
 time_series = time_series_file.get_data()
 print(hourly_trend_changes(time_series))
